@@ -428,6 +428,25 @@
     }
   }
 
+  async function runCitationCheckNow(recordKey, businessName){
+    if (!confirm('Run a fresh citation check for ' + businessName + ' now? This checks Yelp, BBB, and Facebook and takes about 10-15 seconds.')) return;
+    showToast('Running citation check for ' + businessName + '… this takes a moment.');
+    try {
+      const res = await fetch('https://hook.us2.make.com/cp7ukl4mgqsyk1w2uoik4864zv1ak4iy', {
+        method: 'POST',
+        body: new URLSearchParams({ client_record_key: recordKey })
+      });
+      const result = await res.json();
+      if (result.ok === false && result.error === 'no_place_id') {
+        showToast(businessName + ' has no verified Place ID on file — add one before running a citation check.', true);
+      } else {
+        showToast('Done — check hello@packrank.net for ' + businessName + '\u2019s citation score.');
+      }
+    } catch (err) {
+      showToast("Couldn't complete the check — try again in a moment.", true);
+    }
+  }
+
   // ---------- ROI REPORTS ----------
 
   function populateRoiDropdown(){
@@ -682,10 +701,12 @@
       actions = `<button class="btn" onclick="setStatus('${r.key}','paused')">Pause</button>
                  <button class="btn" onclick="resendTodaysEmails('${r.key}','${esc(r.business_name)}')">Resend Today's Emails</button>
                  <button class="btn" onclick="sendManagerAccessRequest('${r.key}','${esc(r.business_name)}')">Send Manager Access Request</button>
+                 <button class="btn" onclick="runCitationCheckNow('${r.key}','${esc(r.business_name)}')">Run Citation Check Now</button>
                  <button class="btn" onclick="toggleEdit('${r.key}')">Edit</button>
                  <button class="btn danger" onclick="doDelete('${r.key}','${esc(r.business_name)}')">Delete</button>`;
     } else if (status === 'paused') {
       actions = `<button class="btn primary" onclick="setStatus('${r.key}','active')">Reactivate</button>
+                 <button class="btn" onclick="runCitationCheckNow('${r.key}','${esc(r.business_name)}')">Run Citation Check Now</button>
                  <button class="btn" onclick="toggleEdit('${r.key}')">Edit</button>
                  <button class="btn danger" onclick="doDelete('${r.key}','${esc(r.business_name)}')">Delete</button>`;
     }
