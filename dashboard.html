@@ -645,6 +645,12 @@
     return (s || '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  // Safe string argument for inline onclick handlers: JS-encode first, then HTML-encode
+  // for the attribute. Handles names with apostrophes like "Sandy's Heating and Air".
+  function jsStr(s){
+    return esc(JSON.stringify((s || '').toString()));
+  }
+
   function render(records){
     const buckets = { lead: [], active: [], paused: [] };
     records.forEach(r => {
@@ -687,7 +693,7 @@
         flag += '<span class="card-flag ok" style="margin-bottom:0;white-space:nowrap;">Paid</span>';
       } else if (r.stripe_checkout_url) {
         flag += '<span class="card-flag missing" style="margin-bottom:0;white-space:nowrap;">Awaiting payment</span>';
-        flag += '<button onclick="copyPaymentLink(\'' + esc(r.stripe_checkout_url) + '\')" style="white-space:nowrap;font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--pin);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;">Copy payment link</button>';
+        flag += '<button onclick="copyPaymentLink(' + jsStr(r.stripe_checkout_url) + ')" style="white-space:nowrap;font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--pin);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;">Copy payment link</button>';
       }
       flag += '</div>';
     }
@@ -696,19 +702,19 @@
     if (status === 'lead') {
       actions = `<button class="btn primary" onclick="toggleConvert('${r.key}')">Convert to Active</button>
                  <button class="btn" onclick="toggleEdit('${r.key}')">Edit</button>
-                 <button class="btn danger" onclick="doDelete('${r.key}','${esc(r.business_name)}')">Delete</button>`;
+                 <button class="btn danger" onclick="doDelete('${r.key}',${jsStr(r.business_name)})">Delete</button>`;
     } else if (status === 'active') {
       actions = `<button class="btn" onclick="setStatus('${r.key}','paused')">Pause</button>
-                 <button class="btn" onclick="resendTodaysEmails('${r.key}','${esc(r.business_name)}')">Resend Today's Emails</button>
-                 <button class="btn" onclick="sendManagerAccessRequest('${r.key}','${esc(r.business_name)}')">Send Manager Access Request</button>
-                 <button class="btn" onclick="runCitationCheckNow('${r.key}','${esc(r.business_name)}')">Run Citation Check Now</button>
+                 <button class="btn" onclick="resendTodaysEmails('${r.key}',${jsStr(r.business_name)})">Resend Today's Emails</button>
+                 <button class="btn" onclick="sendManagerAccessRequest('${r.key}',${jsStr(r.business_name)})">Send Manager Access Request</button>
+                 <button class="btn" onclick="runCitationCheckNow('${r.key}',${jsStr(r.business_name)})">Run Citation Check Now</button>
                  <button class="btn" onclick="toggleEdit('${r.key}')">Edit</button>
-                 <button class="btn danger" onclick="doDelete('${r.key}','${esc(r.business_name)}')">Delete</button>`;
+                 <button class="btn danger" onclick="doDelete('${r.key}',${jsStr(r.business_name)})">Delete</button>`;
     } else if (status === 'paused') {
       actions = `<button class="btn primary" onclick="setStatus('${r.key}','active')">Reactivate</button>
-                 <button class="btn" onclick="runCitationCheckNow('${r.key}','${esc(r.business_name)}')">Run Citation Check Now</button>
+                 <button class="btn" onclick="runCitationCheckNow('${r.key}',${jsStr(r.business_name)})">Run Citation Check Now</button>
                  <button class="btn" onclick="toggleEdit('${r.key}')">Edit</button>
-                 <button class="btn danger" onclick="doDelete('${r.key}','${esc(r.business_name)}')">Delete</button>`;
+                 <button class="btn danger" onclick="doDelete('${r.key}',${jsStr(r.business_name)})">Delete</button>`;
     }
 
     card.innerHTML = `
@@ -753,7 +759,7 @@
           <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--found);">Complimentary / free account (skip payment)</span>
         </label>
         <div class="card-actions" style="margin-top:14px;">
-          <button class="btn primary" onclick="doConvert('${r.key}','${esc(r.business_name)}','${esc(r.client_email)}','${esc(r.address)}')">Save & Activate</button>
+          <button class="btn primary" onclick="doConvert('${r.key}',${jsStr(r.business_name)},${jsStr(r.client_email)},${jsStr(r.address)})">Save & Activate</button>
           <button class="btn" onclick="toggleConvert('${r.key}')">Cancel</button>
         </div>
       </div>`;
@@ -933,15 +939,15 @@
           <textarea id="p-draft-${r.key}" style="min-height:140px;">${esc(r.draft_email)}</textarea>
         </div>
         <div class="card-actions" style="margin-top:12px;">
-          <button class="btn primary" onclick="doApproveSend('${r.key}','${esc(r.business_name)}')">Approve &amp; Send</button>
+          <button class="btn primary" onclick="doApproveSend('${r.key}',${jsStr(r.business_name)})">Approve &amp; Send</button>
           <button class="btn" onclick="doSaveProspectEdit('${r.key}')">Save Draft</button>
-          <button class="btn danger" onclick="doSkipProspect('${r.key}','${esc(r.business_name)}')">Skip</button>
+          <button class="btn danger" onclick="doSkipProspect('${r.key}',${jsStr(r.business_name)})">Skip</button>
         </div>
       `;
     } else {
       body += `
         <div class="card-actions">
-          <button class="btn danger" onclick="doSkipProspect('${r.key}','${esc(r.business_name)}')">Skip</button>
+          <button class="btn danger" onclick="doSkipProspect('${r.key}',${jsStr(r.business_name)})">Skip</button>
         </div>
       `;
     }
