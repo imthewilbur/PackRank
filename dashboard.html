@@ -207,6 +207,23 @@
 
   .roi-share-note{font-size:12px;color:var(--ink-soft);padding:16px 32px;background:var(--paper-2);}
 
+  .roi-results{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:24px;}
+  .roi-results-head{padding:28px 32px 22px;}
+  .roi-results-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);}
+  .roi-results-num{font-family:'Bebas Neue',sans-serif;font-size:72px;line-height:1;color:var(--ink);margin:8px 0 6px;}
+  .roi-results-cmp{font-size:14.5px;font-weight:600;}
+  .roi-results-cmp.up{color:#2F8F5B;}
+  .roi-results-cmp.down{color:#C7431D;}
+  .roi-results-cmp.flat{color:var(--ink-soft);}
+  .roi-bars{display:flex;align-items:flex-end;gap:6px;height:140px;padding:0 32px;}
+  .roi-bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0;}
+  .roi-bar-track{flex:1;width:100%;display:flex;align-items:flex-end;}
+  .roi-bar-fill{width:100%;background:var(--paper-2);border-radius:3px 3px 0 0;min-height:2px;}
+  .roi-bar.latest .roi-bar-fill{background:var(--pin);}
+  .roi-bar-val{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);margin-bottom:3px;}
+  .roi-bar-month{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--ink-soft);margin-top:4px;white-space:nowrap;}
+  @media (max-width:640px){ .roi-bar-val{display:none;} .roi-bars{gap:3px;padding:0 16px;} .roi-results-head{padding:22px 16px;} }
+
   @media print{
     header, .tab-toggle, .logout-btn, .roi-picker, .roi-share-note{display:none !important;}
     body{background:#fff;}
@@ -537,19 +554,83 @@
         body: new URLSearchParams({ client_record_key: recordKey })
       });
       const data = await res.json();
-      renderRoiReport(recordKey, data.rank_snapshots || [], data.citation_snapshots || []);
+      renderRoiReport(recordKey, data.rank_snapshots || [], data.citation_snapshots || [], data.performance_snapshots || []);
     } catch (err) {
       content.innerHTML = '<div class="roi-empty">Couldn\'t load this report — try again in a moment.</div>';
     }
   }
 
-  function renderRoiReport(recordKey, rankSnapshots, citationSnapshots){
+  // "Customers who contacted you from Google" = calls + website clicks + direction
+  // requests, from Google's own Business Profile performance data (monthly snapshots).
+  // Compared against the same month last year so seasonality doesn't mislead.
+  function monthLabel(ym, short){
+    if (!ym) return '';
+    const [y, m] = ym.split('-').map(Number);
+    const d = new Date(y, m - 1, 1);
+    return d.toLocaleString('en-US', short ? { month: 'short' } : { month: 'long', year: 'numeric' });
+  }
+  function shiftMonth(ym, delta){
+    const [y, m] = ym.split('-').map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+  function renderResultsCard(perfSnapshots){
+    const perf = (perfSnapshots || [])
+      .filter(p => p && p.month)
+      .map(p => ({ month: p.month, actions: Number(p.total_actions) || 0, calls: Number(p.calls) || 0,
+                   clicks: Number(p.website_clicks) || 0, directions: Number(p.directions) || 0, views: Number(p.total_views) || 0 }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+    if (perf.length === 0) return '';
+
+    const latest = perf[perf.length - 1];
+    const lastYear = perf.find(p => p.month === shiftMonth(latest.month, -12));
+    let cmpHtml;
+    if (lastYear && lastYear.actions > 0) {
+      const pct = Math.round((latest.actions - lastYear.actions) / lastYear.actions * 100);
+      const cls = pct > 0 ? 'up' : (pct < 0 ? 'down' : 'flat');
+      const arrow = pct > 0 ? '▲ Up ' : (pct < 0 ? '▼ Down ' : 'Even ');
+      cmpHtml = `<div class="roi-results-cmp ${cls}">${arrow}${pct === 0 ? '' : Math.abs(pct) + '% '}vs. ${esc(monthLabel(lastYear.month))} (${lastYear.actions})</div>`;
+    } else {
+      cmpHtml = `<div class="roi-results-cmp flat">First tracked year — compared against this month next year.</div>`;
+    }
+
+    const last12 = perf.slice(-12);
+    const max = Math.max(1, ...last12.map(p => p.actions));
+    const bars = last12.map((p, i) => `
+      <div class="roi-bar${i === last12.length - 1 ? ' latest' : ''}" title="${esc(monthLabel(p.month))}: ${p.actions}">
+        <div class="roi-bar-val">${p.actions}</div>
+        <div class="roi-bar-track"><div class="roi-bar-fill" style="height:${Math.round(p.actions / max * 100)}%"></div></div>
+        <div class="roi-bar-month">${esc(monthLabel(p.month, true))}</div>
+      </div>`).join('');
+
+    return `
+      <div class="roi-results">
+        <div class="roi-results-head">
+          <div class="roi-results-label">Customers who contacted you from Google &middot; ${esc(monthLabel(latest.month))}</div>
+          <div class="roi-results-num">${latest.actions}</div>
+          ${cmpHtml}
+        </div>
+        <div class="roi-metrics-row">
+          <div class="roi-metric"><div class="roi-metric-label">Phone calls</div><div class="roi-metric-val">${latest.calls}</div><div class="roi-metric-sub">${lastYear ? lastYear.calls + ' same month last year' : 'from the Call button'}</div></div>
+          <div class="roi-metric"><div class="roi-metric-label">Website visits</div><div class="roi-metric-val">${latest.clicks}</div><div class="roi-metric-sub">${lastYear ? lastYear.clicks + ' same month last year' : 'from the profile'}</div></div>
+          <div class="roi-metric"><div class="roi-metric-label">Direction requests</div><div class="roi-metric-val">${latest.directions}</div><div class="roi-metric-sub">${lastYear ? lastYear.directions + ' same month last year' : 'from Maps'}</div></div>
+        </div>
+        <div class="roi-section">
+          <h3>Last ${last12.length} months</h3>
+          <div class="roi-bars">${bars}</div>
+          <div style="font-size:12.5px;color:var(--ink-soft);margin-top:14px;">Profile viewed ${latest.views.toLocaleString()} times in Google Search &amp; Maps in ${esc(monthLabel(latest.month))}. Source: Google Business Profile performance data.</div>
+        </div>
+      </div>`;
+  }
+
+  function renderRoiReport(recordKey, rankSnapshots, citationSnapshots, perfSnapshots){
     const content = document.getElementById('roiContent');
     const clientRec = allClientRecords.find(r => r.key === recordKey);
     const businessName = clientRec ? clientRec.business_name : '';
+    const resultsHtml = renderResultsCard(perfSnapshots);
 
     if (rankSnapshots.length === 0) {
-      content.innerHTML = `<div class="roi-empty">No data yet for ${esc(businessName)}. The first monthly snapshot lands after their next scheduled Rank Tracker / Citation Check run — this report builds automatically from there.</div>`;
+      content.innerHTML = resultsHtml + `<div class="roi-empty">No ranking data yet for ${esc(businessName)}. The first monthly snapshot lands after their next scheduled Rank Tracker / Citation Check run — this report builds automatically from there.</div>`;
       return;
     }
 
@@ -588,7 +669,7 @@
         <td>${r.citationScore !== null ? r.citationScore + '/100' : '—'}</td>
       </tr>`).join('');
 
-    content.innerHTML = `
+    content.innerHTML = resultsHtml + `
       <div class="roi-report">
         <div class="roi-report-head">
           <div>
