@@ -392,6 +392,26 @@
     color:var(--ink-soft);margin-top:32px;
   }
   .pricing-note a{color:var(--pin);text-decoration:underline;}
+  .founding-banner{
+    display:none;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    background:var(--ink);color:var(--paper);border-radius:6px;padding:16px 22px;margin-bottom:28px;
+  }
+  .founding-on .founding-banner{display:flex;}
+  .founding-banner .fb-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:0.02em;}
+  .founding-banner .fb-sub{font-size:13.5px;opacity:0.85;margin-top:2px;}
+  .founding-banner .fb-spots{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:0.04em;
+    background:var(--pin);color:var(--paper);padding:7px 14px;border-radius:14px;text-transform:uppercase;white-space:nowrap;
+  }
+  .price-was{display:none;font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--ink-soft);text-decoration:line-through;margin-right:8px;}
+  .founding-on .price-was{display:inline;}
+  .price-amt .p-founding{display:none;}
+  .founding-on .price-amt .p-founding{display:inline;}
+  .founding-on .price-amt .p-std{display:none;}
+  .price-annual .p-founding{display:none;}
+  .founding-on .price-annual .p-founding{display:inline;}
+  .founding-on .price-annual .p-std{display:none;}
+  .price-setup{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);margin:-10px 0 16px;}
 
   /* ---------- WHY THIS WORKS ---------- */
   .proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;}
@@ -600,11 +620,19 @@
         <h2>Services &amp; pricing</h2>
       </div>
     </div>
+    <div class="founding-banner">
+      <div>
+        <div class="fb-title">Founding Client pricing</div>
+        <div class="fb-sub">Our first 10 clients get roughly 28% off, with the monthly rate locked for 12 months.</div>
+      </div>
+      <div class="fb-spots"><span id="founding-left">10</span> of <span id="founding-total">10</span> spots left</div>
+    </div>
     <div class="pricing-grid">
       <div class="price-card">
         <div class="price-name">Foundation</div>
-        <div class="price-amt">$999</div>
-        <div class="price-freq">ONE-TIME</div>
+        <div class="price-amt"><span class="price-was">$999</span><span class="p-std">$999</span><span class="p-founding">$749</span></div>
+        <div class="price-freq">ONE-TIME SETUP</div>
+        <div class="price-annual">&nbsp;</div>
         <ul>
           <li>Full profile audit</li>
           <li>Category correction</li>
@@ -612,31 +640,34 @@
           <li>Photo upload &amp; organization</li>
           <li>Service menu build</li>
           <li>Citation cleanup</li>
+          <li>Your brand kit (logo, colors, style) for post graphics</li>
         </ul>
-        <div class="price-best">Best for: getting the fundamentals right, fast.</div>
+        <div class="price-best">Best for: getting the fundamentals right, fast. Also the first step for every monthly plan.</div>
       </div>
       <div class="price-card popular">
         <div class="price-badge">Most popular</div>
         <div class="price-name">Growth</div>
-        <div class="price-amt">$699</div>
+        <div class="price-amt"><span class="price-was">$699</span><span class="p-std">$699</span><span class="p-founding">$499</span></div>
         <div class="price-freq">PER MONTH</div>
-        <div class="price-annual">Or $6,990/yr — save $1,398</div>
+        <div class="price-annual"><span class="p-std">Or $6,990/yr — save $1,398</span><span class="p-founding">Or $4,990/yr — save $998</span></div>
+        <div class="price-setup">+ one-time Foundation setup</div>
         <ul>
-          <li>Everything in Foundation</li>
-          <li>Monthly posting cadence</li>
-          <li>Review requests &amp; responses</li>
-          <li>Q&amp;A seeding</li>
+          <li>2 post options every week, each with a custom branded graphic &mdash; you approve before anything goes live</li>
+          <li>Review responses written in your voice</li>
           <li>Monthly photo refresh</li>
-          <li>Rank tracking + monthly report</li>
-          <li>Citation monitoring</li>
+          <li>Monthly report: calls, website clicks &amp; direction requests from Google, compared to last year</li>
+          <li>Local rank tracking, searched from your neighborhood</li>
+          <li>Monthly listing check across 8 directories, with a fix-list</li>
+          <li>Alerts when Google or the public edits your profile</li>
         </ul>
         <div class="price-best">Best for: ongoing visibility &amp; steady lead flow.</div>
       </div>
       <div class="price-card">
         <div class="price-name">Dominate</div>
-        <div class="price-amt">$1,799</div>
+        <div class="price-amt"><span class="price-was">$1,799</span><span class="p-std">$1,799</span><span class="p-founding">$1,299</span></div>
         <div class="price-freq">PER MONTH, STARTING</div>
-        <div class="price-annual">Or $17,990/yr — save $3,598</div>
+        <div class="price-annual"><span class="p-std">Or $17,990/yr — save $3,598</span><span class="p-founding">Or $12,990/yr — save $2,598</span></div>
+        <div class="price-setup">+ one-time Foundation setup</div>
         <ul>
           <li>Everything in Growth</li>
           <li>Multiple locations, one plan</li>
@@ -647,8 +678,22 @@
         <div class="price-best">Best for: multi-location or competitive markets. Additional locations quoted per site.</div>
       </div>
     </div>
-    <div class="pricing-note">Month-to-month, no long-term contract. Not sure which fits? <a href="#audit">Run your free audit first</a> — we'll recommend a tier based on what we find.</div>
+    <div class="pricing-note">Every client starts with the one-time Foundation setup. Growth and Dominate then run month-to-month &mdash; no long-term contract. Not sure which fits? <a href="#audit">Run your free audit first</a> &mdash; we'll recommend a tier based on what we find.</div>
   </div>
+  <script>
+    /* Founding Client offer: set FOUNDING_LEFT to the number of founding spots still open.
+       Set it to 0 to end the offer — the banner hides and standard prices show. */
+    (function(){
+      var FOUNDING_TOTAL = 10;
+      var FOUNDING_LEFT = 10;
+      var sec = document.getElementById('pricing');
+      if (FOUNDING_LEFT > 0) {
+        sec.classList.add('founding-on');
+        document.getElementById('founding-left').textContent = FOUNDING_LEFT;
+        document.getElementById('founding-total').textContent = FOUNDING_TOTAL;
+      }
+    })();
+  </script>
 </section>
 
 <section class="section">
@@ -691,7 +736,7 @@
       </div>
       <div class="faq-item">
         <div class="faq-q">Is there a contract?</div>
-        <p class="faq-a">No long-term contract — month-to-month by default on Growth and Dominate. Prefer to prepay? Annual billing saves you 2 months.</p>
+        <p class="faq-a">No long-term contract. Every new client starts with the one-time Foundation setup, and Growth and Dominate then run month-to-month. Prefer to prepay? Annual billing saves you 2 months.</p>
       </div>
       <div class="faq-item">
         <div class="faq-q">What if I don't have a Google Business Profile yet?</div>
