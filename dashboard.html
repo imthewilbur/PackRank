@@ -446,18 +446,18 @@
   }
 
   async function runCitationCheckNow(recordKey, businessName){
-    if (!confirm('Run a fresh citation check for ' + businessName + ' now? This checks Yelp, BBB, and Facebook and takes about 10-15 seconds.')) return;
-    showToast('Running citation check for ' + businessName + '… this takes a moment.');
+    if (!confirm('Run a fresh listing check for ' + businessName + ' now? It checks 8 directories (Yelp, Facebook, Bing, Apple Maps, BBB, Yellow Pages + 2 industry sites) against Google and emails the fix-list to hello@packrank.net in about 5 minutes.')) return;
+    showToast('Starting listing check for ' + businessName + '…');
     try {
       const res = await fetch('https://hook.us2.make.com/cp7ukl4mgqsyk1w2uoik4864zv1ak4iy', {
         method: 'POST',
         body: new URLSearchParams({ client_record_key: recordKey })
       });
       const result = await res.json();
-      if (result.ok === false && result.error === 'no_place_id') {
-        showToast(businessName + ' has no verified Place ID on file — add one before running a citation check.', true);
+      if (result.ok === false && result.error === 'no_gbp_location') {
+        showToast(businessName + ' isn\u2019t connected to Google yet — the listing check needs Manager access to their Business Profile first.', true);
       } else {
-        showToast('Done — check hello@packrank.net for ' + businessName + '\u2019s citation score.');
+        showToast('Started — the fix-list for ' + businessName + ' will arrive at hello@packrank.net in about 5 minutes.');
       }
     } catch (err) {
       showToast("Couldn't complete the check — try again in a moment.", true);
