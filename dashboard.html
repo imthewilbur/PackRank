@@ -814,12 +814,22 @@
       <div class="convert-form" id="convert-${r.key}">
         <label>Tier &amp; billing</label>
         <select id="tier-${r.key}" style="width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:3px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;background:#FCFBF8;color:var(--ink);">
-          <option value="foundation">Foundation \u2014 $999 one-time</option>
-          <option value="growth_monthly">Growth \u2014 $699/mo</option>
-          <option value="growth_annual">Growth \u2014 $6,990/yr</option>
-          <option value="dominate_monthly">Dominate \u2014 $1,799/mo</option>
-          <option value="dominate_annual">Dominate \u2014 $17,990/yr</option>
+          <optgroup label="Founding-client pricing">
+            <option value="growth_monthly_f" selected>Growth \u2014 $499/mo + $749 setup</option>
+            <option value="growth_annual_f">Growth \u2014 $4,990/yr (setup waived)</option>
+            <option value="dominate_monthly_f">Dominate \u2014 $1,299/mo + $749 setup</option>
+            <option value="dominate_annual_f">Dominate \u2014 $12,990/yr (setup waived)</option>
+            <option value="foundation_f">Foundation only \u2014 $749 one-time</option>
+          </optgroup>
+          <optgroup label="Standard pricing">
+            <option value="growth_monthly">Growth \u2014 $699/mo + $999 setup</option>
+            <option value="growth_annual">Growth \u2014 $6,990/yr (setup waived)</option>
+            <option value="dominate_monthly">Dominate \u2014 $1,799/mo + $999 setup</option>
+            <option value="dominate_annual">Dominate \u2014 $17,990/yr (setup waived)</option>
+            <option value="foundation">Foundation only \u2014 $999 one-time</option>
+          </optgroup>
         </select>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-weight:normal;"><input type="checkbox" id="waivesetup-${r.key}" style="width:auto;margin:0;"> Waive setup fee (e.g. an existing Foundation client upgrading)</label>
         <label>Industry context (services, specialties)</label>
         <textarea id="ic-${r.key}"></textarea>
         <label>Brand voice notes</label>
@@ -1115,12 +1125,20 @@
     }
   }
 
+  // Stripe TEST-mode prices (swap for live IDs at launch)
+  const SETUP_FOUNDING = 'price_1UYCgZ20hOMOVUZE9AraiH4q'; // $749
+  const SETUP_STANDARD = 'price_1UYCgZ20hOMOVUZEYkqDuiit'; // $999
   const TIER_MAP = {
-    foundation:       { price_id: 'price_1UDpYl20hOMOVUZEfRjkc3xg', mode: 'payment',      label: 'Foundation ($999 one-time)' },
-    growth_monthly:   { price_id: 'price_1UDpYl20hOMOVUZEujehiXpq', mode: 'subscription', label: 'Growth Monthly ($699/mo)' },
-    growth_annual:    { price_id: 'price_1UDpYl20hOMOVUZEA3N4VOmg', mode: 'subscription', label: 'Growth Annual ($6,990/yr)' },
-    dominate_monthly: { price_id: 'price_1UDpYl20hOMOVUZEzvGH8Lmu', mode: 'subscription', label: 'Dominate Monthly ($1,799/mo)' },
-    dominate_annual:  { price_id: 'price_1UDpYm20hOMOVUZECP4LTc4y', mode: 'subscription', label: 'Dominate Annual ($17,990/yr)' }
+    growth_monthly_f:   { price_id: 'price_1UYCgZ20hOMOVUZEUe2XEgL7', setup: SETUP_FOUNDING, mode: 'subscription', label: 'Growth Monthly ($499/mo, founding)' },
+    growth_annual_f:    { price_id: 'price_1UYCgZ20hOMOVUZEIhakXkkx', setup: '',             mode: 'subscription', label: 'Growth Annual ($4,990/yr, founding)' },
+    dominate_monthly_f: { price_id: 'price_1UYCga20hOMOVUZEhXWSc7QK', setup: SETUP_FOUNDING, mode: 'subscription', label: 'Dominate Monthly ($1,299/mo, founding)' },
+    dominate_annual_f:  { price_id: 'price_1UYCga20hOMOVUZE4JGFANN9', setup: '',             mode: 'subscription', label: 'Dominate Annual ($12,990/yr, founding)' },
+    foundation_f:       { price_id: SETUP_FOUNDING,                   setup: '',             mode: 'payment',      label: 'Foundation ($749 one-time, founding)' },
+    growth_monthly:     { price_id: 'price_1UYCgZ20hOMOVUZEDCxSAvJy', setup: SETUP_STANDARD, mode: 'subscription', label: 'Growth Monthly ($699/mo)' },
+    growth_annual:      { price_id: 'price_1UYCgZ20hOMOVUZEk9MXXBtk', setup: '',             mode: 'subscription', label: 'Growth Annual ($6,990/yr)' },
+    dominate_monthly:   { price_id: 'price_1UYCga20hOMOVUZEAstWqvJT', setup: SETUP_STANDARD, mode: 'subscription', label: 'Dominate Monthly ($1,799/mo)' },
+    dominate_annual:    { price_id: 'price_1UYCga20hOMOVUZERIizUKyY', setup: '',             mode: 'subscription', label: 'Dominate Annual ($17,990/yr)' },
+    foundation:         { price_id: SETUP_STANDARD,                   setup: '',             mode: 'payment',      label: 'Foundation ($999 one-time)' }
   };
 
   async function doConvert(recordKey, businessName, clientEmail, address){
@@ -1128,6 +1146,7 @@
     const tier = TIER_MAP[tierKey];
     const needsNewListing = document.getElementById('newlisting-' + recordKey).checked;
     const isFree = document.getElementById('isfree-' + recordKey).checked;
+    const waiveSetup = document.getElementById('waivesetup-' + recordKey).checked;
     const body = {
       action: 'convert',
       record_key: recordKey,
@@ -1137,6 +1156,7 @@
       needs_new_listing: needsNewListing ? 'yes' : '',
       is_free: isFree ? 'yes' : '',
       price_id: tier.price_id,
+      setup_price_id: waiveSetup ? '' : tier.setup,
       mode: tier.mode,
       tier_label: isFree ? 'Complimentary' : tier.label,
       industry_context: document.getElementById('ic-' + recordKey).value,
