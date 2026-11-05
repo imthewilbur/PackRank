@@ -1098,19 +1098,18 @@
   }
 
   async function doPullProspects(){
-    const category = prompt('What category should I search for in Omaha? (e.g. "landscaping companies", "pest control")');
+    const category = prompt('What kind of business? (e.g. "plumbing", "roofing", "dentist")\n\nSearches Google\'s top 20 in Omaha, Papillion, Bellevue, Elkhorn and Council Bluffs, and looks for an email on each website.');
     if (!category) return;
-    showToast('Searching for ' + category + '\u2026');
     try {
       const res = await fetch(PULL_PROSPECTS_URL, {
         method: 'POST',
-        body: new URLSearchParams({ key: KEY, category, review_threshold: '80', today: todayStr() })
+        body: new URLSearchParams({ key: KEY, category, today: todayStr() })
       });
-      const result = await res.json();
-      showToast('Added ' + (result.added || 0) + ' new prospects out of ' + (result.searched || 0) + ' found.');
-      loadProspects();
+      if (!res.ok) throw new Error(res.status);
+      showToast('Pulling "' + category + '" prospects in the background \u2014 you\'ll get a summary email in a few minutes.');
+      setTimeout(loadProspects, 120000);
     } catch (err) {
-      showToast("Couldn't pull prospects \u2014 try again in a moment.", true);
+      showToast("Couldn't start the pull \u2014 try again in a moment.", true);
     }
   }
 
