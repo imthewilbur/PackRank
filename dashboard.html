@@ -1026,8 +1026,11 @@
         <div class="edit-form show" style="border-top:none;padding-top:0;margin-top:0;">
           <label>Email address (required to send \u2014 not provided by Google)</label>
           <input id="p-email-${r.key}" value="${esc(r.email)}" placeholder="owner@business.com">
+          ${r.rank_position ? `<div style="font-size:12px;color:var(--ink-60,#5B5F6B);margin:6px 0 2px;line-height:1.5;"><strong>"${esc(r.rank_keyword)}"</strong> \u2014 ${esc(r.rank_position)}${r.rank_leader ? '<br>Named in email: ' + esc(r.rank_leader) : ''}</div>` : ''}
+          <label>Subject</label>
+          <input id="p-subject-${r.key}" value="${esc(r.draft_subject || 'Quick note about your Google visibility')}">
           <label>Draft email</label>
-          <textarea id="p-draft-${r.key}" style="min-height:140px;">${esc(r.draft_email)}</textarea>
+          <textarea id="p-draft-${r.key}" style="min-height:220px;">${esc(r.draft_email)}</textarea>
         </div>
         <div class="card-actions" style="margin-top:12px;">
           <button class="btn primary" onclick="doApproveSend('${r.key}',${jsStr(r.business_name)})">Approve &amp; Send</button>
@@ -1061,9 +1064,10 @@
       return;
     }
     const draft = document.getElementById('p-draft-' + recordKey).value;
+    const subject = document.getElementById('p-subject-' + recordKey).value.trim();
     if (!confirm(`Send this outreach email to ${businessName} at ${email}?`)) return;
     try {
-      await postProspectUpdate({ action: 'approve_send', record_key: recordKey, email, draft_email: draft });
+      await postProspectUpdate({ action: 'approve_send', record_key: recordKey, email, draft_email: draft, draft_subject: subject });
       showToast('Sent to ' + businessName + '.');
       loadProspects();
     } catch (err) {
@@ -1074,8 +1078,9 @@
   async function doSaveProspectEdit(recordKey){
     const email = document.getElementById('p-email-' + recordKey).value.trim();
     const draft = document.getElementById('p-draft-' + recordKey).value;
+    const subject = document.getElementById('p-subject-' + recordKey).value.trim();
     try {
-      await postProspectUpdate({ action: 'edit', record_key: recordKey, email, draft_email: draft });
+      await postProspectUpdate({ action: 'edit', record_key: recordKey, email, draft_email: draft, draft_subject: subject });
       showToast('Draft saved.');
     } catch (err) {
       showToast("Couldn't save: " + err.message, true);
@@ -1110,16 +1115,15 @@
   }
 
   async function doDraftBatch(){
-    if (!confirm('Draft outreach emails for all not-yet-drafted prospects? This uses AI credits per business.')) return;
-    showToast('Drafting\u2026 this can take a minute for a full batch.');
+    if (!confirm('Draft outreach emails for all not-yet-drafted prospects? Each one runs a 5-spot Google rank check plus an AI draft.')) return;
     try {
       const res = await fetch(DRAFT_BATCH_URL, {
         method: 'POST',
         body: new URLSearchParams({ key: KEY, batch_label: todayStr(), today: todayStr() })
       });
-      const result = await res.json();
-      showToast('Drafted ' + (result.drafted || 0) + ' emails \u2014 ready to review.');
-      loadProspects();
+      if (!res.ok) throw new Error(res.status);
+      showToast('Drafting in the background \u2014 about 20 seconds per prospect. Refresh the board in a few minutes.');
+      setTimeout(loadProspects, 60000);
     } catch (err) {
       showToast("Couldn't draft \u2014 try again in a moment.", true);
     }
