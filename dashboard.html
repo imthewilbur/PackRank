@@ -831,15 +831,15 @@
         </select>
         <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-weight:normal;"><input type="checkbox" id="waivesetup-${r.key}" style="width:auto;margin:0;"> Waive setup fee (e.g. an existing Foundation client upgrading)</label>
         <label>Industry context (services, specialties)</label>
-        <textarea id="ic-${r.key}"></textarea>
+        <textarea id="ic-${r.key}">${esc(r.industry_context)}</textarea>
         <label>Brand voice notes</label>
-        <textarea id="bv-${r.key}"></textarea>
+        <textarea id="bv-${r.key}">${esc(r.brand_voice)}</textarea>
         <label>Tracked keywords</label>
         <div class="kw-row">
-          <input placeholder="Keyword 1" id="k1-${r.key}">
-          <input placeholder="Keyword 2" id="k2-${r.key}">
-          <input placeholder="Keyword 3" id="k3-${r.key}">
-          <input placeholder="Keyword 4" id="k4-${r.key}">
+          <input placeholder="Keyword 1" id="k1-${r.key}" value="${esc(r.keyword_1)}">
+          <input placeholder="Keyword 2" id="k2-${r.key}" value="${esc(r.keyword_2)}">
+          <input placeholder="Keyword 3" id="k3-${r.key}" value="${esc(r.keyword_3)}">
+          <input placeholder="Keyword 4" id="k4-${r.key}" value="${esc(r.keyword_4)}">
         </div>
         <label style="display:flex;align-items:center;gap:8px;margin-top:16px;cursor:pointer;">
           <input type="checkbox" id="newlisting-${r.key}" style="width:auto;">
