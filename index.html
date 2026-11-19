@@ -421,6 +421,21 @@
   }
   .proof-col p{font-size:14px;line-height:1.6;color:var(--ink-soft);margin:0;}
 
+  /* ---------- RESULTS (case studies, filled from the published list) ---------- */
+  .results-section{display:none;}
+  .results-section.has-results{display:block;}
+  .results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:24px;}
+  .result-card{
+    background:#fff;border:1px solid var(--line);border-left:4px solid var(--pin);
+    border-radius:4px;padding:24px 26px;
+  }
+  .result-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);}
+  .result-stat{font-family:'Bebas Neue',sans-serif;font-size:56px;line-height:1;color:var(--pin);margin:10px 0 2px;}
+  .result-stat-label{font-size:13px;color:var(--ink-soft);margin-bottom:16px;}
+  .result-card h3{font-size:26px;margin-bottom:10px;}
+  .result-card p{font-size:14px;line-height:1.65;color:var(--ink-soft);margin:0;}
+  .results-note{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);margin-top:18px;}
+
   /* ---------- FAQ ---------- */
   .faq-section{background:var(--paper-2);}
   .faq-list{max-width:760px;}
@@ -719,6 +734,43 @@
       </div>
     </div>
   </div>
+</section>
+
+<section class="section results-section" id="results">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="section-eyebrow"><img src="/assets/logo-icon.png" alt="">Results</div>
+        <h2>What it looks like in practice</h2>
+      </div>
+    </div>
+    <div class="results-grid" id="resultsGrid"></div>
+    <div class="results-note">Real numbers from Google Business Profile Performance data, shared without names to protect client privacy.</div>
+  </div>
+  <script>
+    (function(){
+      // Published case studies come from Make ("Public - List Case Studies").
+      // The section stays hidden unless at least one is published.
+      var URL = "https://hook.us2.make.com/s1osxo7leyq80pq8hw5bepmmqwonrhci";
+      function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+      fetch(URL).then(function(r){ return r.ok ? r.json() : []; }).then(function(list){
+        if (!Array.isArray(list)) return;
+        list = list.filter(function(c){ return c && c.headline && c.stat_value; });
+        if (!list.length) return;
+        list.sort(function(a, b){ return String(b.month || "").localeCompare(String(a.month || "")); });
+        document.getElementById("resultsGrid").innerHTML = list.slice(0, 6).map(function(c){
+          return '<div class="result-card">' +
+            '<div class="result-label">' + esc(c.label) + '</div>' +
+            '<div class="result-stat">' + esc(c.stat_value) + '</div>' +
+            '<div class="result-stat-label">' + esc(c.stat_label) + '</div>' +
+            '<h3>' + esc(c.headline) + '</h3>' +
+            '<p>' + esc(c.body) + '</p>' +
+          '</div>';
+        }).join("");
+        document.getElementById("results").classList.add("has-results");
+      }).catch(function(){});
+    })();
+  </script>
 </section>
 
 <section class="section faq-section" id="faq">
