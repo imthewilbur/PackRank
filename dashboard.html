@@ -517,6 +517,15 @@
   }
 
 
+  // Foundation fix plan: AI reads the live Google profile + website and emails
+  // proposed fixes (categories, description, services) to hello@ with Approve / Skip
+  // buttons. Nothing changes on Google until a change is approved in that email.
+  const FIX_PLAN_URL = "https://hook.us2.make.com/qgtw54ttjrweibvev1fmow3ej87dd16j";
+  function draftFixPlan(recordKey, businessName){
+    if (!confirm('Draft a Foundation fix plan for ' + businessName + '? AI reviews their Google profile and website and emails proposed fixes to hello@packrank.net in a few minutes. Nothing changes on Google until you click Approve in that email.')) return;
+    window.open(`${FIX_PLAN_URL}?key=${encodeURIComponent(recordKey)}&k=${encodeURIComponent(KEY)}`, '_blank', 'noopener');
+  }
+
   // ---------- DAILY PERFORMANCE (internal) ----------
   let dailyRange = 30;
   let dailyData = null;
@@ -1002,6 +1011,7 @@
                  <button class="btn" onclick="resendTodaysEmails('${r.key}',${jsStr(r.business_name)})">Resend Today's Emails</button>
                  <button class="btn" onclick="sendManagerAccessRequest('${r.key}',${jsStr(r.business_name)})">Send Manager Access Request</button>
                  <button class="btn" onclick="runCitationCheckNow('${r.key}',${jsStr(r.business_name)})">Run Citation Check Now</button>
+                 <button class="btn" onclick="draftFixPlan('${r.key}',${jsStr(r.business_name)})">Draft Fix Plan</button>
                  <button class="btn" onclick="toggleEdit('${r.key}')">Edit</button>
                  <button class="btn danger" onclick="doDelete('${r.key}',${jsStr(r.business_name)})">Delete</button>`;
     } else if (status === 'paused') {
