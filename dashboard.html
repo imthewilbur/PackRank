@@ -228,6 +228,31 @@
     header, .tab-toggle, .logout-btn, .roi-picker, .roi-share-note{display:none !important;}
     body{background:#fff;}
   }
+
+  /* ---------- DAILY PERFORMANCE (internal) ---------- */
+  .dp-range{display:flex;gap:2px;background:#fff;border:1.5px solid var(--line);border-radius:4px;padding:2px;}
+  .dp-range button{font-family:'IBM Plex Mono',monospace;font-size:11.5px;background:none;border:none;padding:7px 12px;border-radius:3px;cursor:pointer;color:var(--ink-soft);}
+  .dp-range button.active{background:var(--asphalt);color:var(--paper);}
+  .dp-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+  .dp-kpi{background:#fff;border:1px solid var(--line);border-radius:6px;padding:14px 16px;}
+  .dp-kpi .lbl{font-family:'IBM Plex Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);}
+  .dp-kpi .val{font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1;margin-top:6px;}
+  .dp-kpi .cmp{font-size:12px;margin-top:4px;color:var(--ink-soft);}
+  .dp-kpi .cmp .up{color:var(--found);font-weight:600;} .dp-kpi .cmp .down{color:var(--warn);font-weight:600;}
+  .dp-card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:18px 20px;margin-bottom:20px;}
+  .dp-card h3{font-size:22px;margin-bottom:4px;}
+  .dp-card .sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;}
+  .dp-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);margin-bottom:8px;}
+  .dp-legend span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:var(--c);}
+  .dp-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .dp-table th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-soft);padding:8px;border-bottom:1.5px solid var(--line);}
+  .dp-table td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top;}
+  .dp-table td.n{text-align:right;font-variant-numeric:tabular-nums;}
+  .dp-table tr.filling td{color:var(--ink-soft);font-style:italic;}
+  .dp-ev{display:inline-block;font-size:11.5px;padding:2px 7px;border-radius:3px;margin:0 4px 3px 0;}
+  .dp-ev.post{background:rgba(232,84,42,0.12);color:var(--pin-dark);}
+  .dp-ev.review{background:rgba(47,143,91,0.12);color:var(--found);}
+  @media (max-width:820px){ .dp-kpis{grid-template-columns:repeat(2,1fr);} }
 </style>
 </head>
 <body>
@@ -239,6 +264,7 @@
       <div class="tab-toggle" id="tabToggle" style="display:none;">
         <button class="tab-btn active" id="tabBtnPipeline" onclick="switchTab('pipeline')">Client Pipeline</button>
         <button class="tab-btn" id="tabBtnRoi" onclick="switchTab('roi')">ROI Reports</button>
+        <button class="tab-btn" id="tabBtnDaily" onclick="switchTab('daily')">Daily Performance</button>
       </div>
       <button class="logout-btn" id="logoutBtn" style="display:none;" onclick="doLogout()">Log out</button>
     </div>
@@ -309,6 +335,27 @@
   <div id="roiContent"><div class="roi-empty">Select a client above to view their report.</div></div>
 </div>
 
+
+<!-- DAILY PERFORMANCE TAB (internal only) -->
+<div class="board" id="dailyBoardWrap" style="display:none;">
+  <div class="board-head">
+    <h1>Daily Performance</h1>
+    <div class="refresh-note">Internal only &mdash; Google calls, clicks, directions and views per day, with posts and review replies marked</div>
+  </div>
+  <div class="roi-picker">
+    <select id="dailyClientSelect" onchange="loadDaily()">
+      <option value="">Select a client&hellip;</option>
+    </select>
+    <div class="dp-range" id="dpRange">
+      <button onclick="setDailyRange(30)" data-d="30" class="active">30 days</button>
+      <button onclick="setDailyRange(60)" data-d="60">60 days</button>
+      <button onclick="setDailyRange(90)" data-d="90">90 days</button>
+      <button onclick="setDailyRange(9999)" data-d="9999">All</button>
+    </div>
+  </div>
+  <div id="dailyContent"><div class="roi-empty">Select a client above to see their daily numbers.</div></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -319,6 +366,7 @@
   const PULL_PROSPECTS_URL = "https://hook.us2.make.com/stqxx9isx78ypikskbqzyqgpir5j7tjy";
   const DRAFT_BATCH_URL = "https://hook.us2.make.com/3yaessizzo8gtksw2tdsyqm1wbheewu2";
   const ROI_REPORT_URL = "https://hook.us2.make.com/hcybi4eh18u2v95ea3xum2w7b8lx99ce";
+  const DAILY_URL = "https://hook.us2.make.com/atty4bw846dcf0x1316i0r19ntwdw7kc";
   const STORAGE_KEY = "pr_dashboard_key";
   let allClientRecords = [];
   let currentTab = 'pipeline';
@@ -332,6 +380,7 @@
     document.getElementById('gateWrap').style.display = 'flex';
     document.getElementById('boardWrap').style.display = 'none';
     document.getElementById('roiBoardWrap').style.display = 'none';
+    document.getElementById('dailyBoardWrap').style.display = 'none';
     document.getElementById('tabToggle').style.display = 'none';
     document.getElementById('logoutBtn').style.display = 'none';
     document.getElementById('gateError').className = 'gate-error' + (withError ? ' show' : '');
@@ -350,6 +399,8 @@
     document.getElementById('tabBtnRoi').className = 'tab-btn' + (tab === 'roi' ? ' active' : '');
     document.getElementById('boardWrap').style.display = (tab === 'pipeline') ? 'block' : 'none';
     document.getElementById('roiBoardWrap').style.display = (tab === 'roi') ? 'block' : 'none';
+    document.getElementById('tabBtnDaily').className = 'tab-btn' + (tab === 'daily' ? ' active' : '');
+    document.getElementById('dailyBoardWrap').style.display = (tab === 'daily') ? 'block' : 'none';
   }
 
   function submitKey(){
@@ -402,6 +453,7 @@
       allClientRecords = Array.isArray(records) ? records : [];
       render(allClientRecords);
       populateRoiDropdown();
+      populateDailyDropdown();
     } catch (err) {
       document.getElementById('loading').textContent = "Couldn't load clients — " + err.message;
     }
@@ -462,6 +514,167 @@
     } catch (err) {
       showToast("Couldn't complete the check — try again in a moment.", true);
     }
+  }
+
+
+  // ---------- DAILY PERFORMANCE (internal) ----------
+  let dailyRange = 30;
+  let dailyData = null;
+
+  function cityOf(addr){
+    const parts = (addr || '').split(',').map(x => x.trim()).filter(Boolean);
+    return parts.length >= 3 ? parts[parts.length - 2] : '';
+  }
+
+  function populateDailyDropdown(){
+    const sel = document.getElementById('dailyClientSelect');
+    const prior = sel.value;
+    sel.innerHTML = '<option value="">Select a client&hellip;</option>';
+    allClientRecords
+      .filter(r => r.status === 'active' || r.status === 'paused')
+      .sort((a, b) => ((a.business_name || '') + cityOf(a.address)).localeCompare((b.business_name || '') + cityOf(b.address)))
+      .forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.key;
+        const city = cityOf(r.address);
+        opt.textContent = r.business_name + (city ? ' (' + city + ')' : '') + (r.status === 'paused' ? ' — paused' : '');
+        sel.appendChild(opt);
+      });
+    if (prior) sel.value = prior;
+  }
+
+  function setDailyRange(d){
+    dailyRange = d;
+    document.querySelectorAll('#dpRange button').forEach(b => b.classList.toggle('active', Number(b.dataset.d) === d));
+    if (dailyData) renderDaily();
+  }
+
+  async function loadDaily(){
+    const key = document.getElementById('dailyClientSelect').value;
+    const box = document.getElementById('dailyContent');
+    if (!key) { box.innerHTML = '<div class="roi-empty">Select a client above to see their daily numbers.</div>'; dailyData = null; return; }
+    box.innerHTML = '<div class="roi-empty">Loading&hellip;</div>';
+    try {
+      const res = await fetch(`${DAILY_URL}?key=${encodeURIComponent(KEY)}&client=${encodeURIComponent(key)}`);
+      if (!res.ok) throw new Error('Request failed: ' + res.status);
+      dailyData = await res.json();
+      renderDaily();
+    } catch (err) {
+      box.innerHTML = '<div class="roi-empty">Couldn\'t load daily numbers — ' + esc(err.message) + '</div>';
+    }
+  }
+
+  function isoDay(d){ return d.toISOString().slice(0, 10); }
+  function addDaysIso(iso, n){ const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return isoDay(d); }
+  function shortDay(iso){ const d = new Date(iso + 'T12:00:00Z'); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }); }
+  function wkDay(iso){ const d = new Date(iso + 'T12:00:00Z'); return d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }); }
+
+  function renderDaily(){
+    const box = document.getElementById('dailyContent');
+    const raw = (dailyData && dailyData.days) || [];
+    if (raw.length === 0) { box.innerHTML = '<div class="roi-empty">No daily data yet for this client. It fills in each morning once their Google profile is connected.</div>'; return; }
+    const byDate = {};
+    raw.forEach(r => { if (r && r.date) byDate[r.date] = { calls: +r.calls || 0, clicks: +r.clicks || 0, directions: +r.directions || 0, views: +r.views || 0 }; });
+    const today = isoDay(new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })));
+    const fillingFrom = addDaysIso(today, -2);   // Google's last ~2 days are still filling in
+    const allDates = Object.keys(byDate).sort();
+    const last = allDates[allDates.length - 1];
+    const first = dailyRange >= 9999 ? allDates[0] : addDaysIso(last, -(dailyRange - 1));
+    const days = [];
+    for (let d = first; d <= last; d = addDaysIso(d, 1)) {
+      const v = byDate[d] || { calls: 0, clicks: 0, directions: 0, views: 0, missing: true };
+      days.push(Object.assign({ date: d, actions: v.calls + v.clicks + v.directions, filling: d >= fillingFrom }, v));
+    }
+    // events by date
+    const evByDate = {};
+    ((dailyData && dailyData.events) || []).forEach(e => {
+      if (!e || !e.date) return;
+      if (e.type !== 'gbp_post' && e.type !== 'review_response') return;
+      if (e.type === 'gbp_post' && e.status === 'approved') return; // approved but not yet out
+      (evByDate[e.date] = evByDate[e.date] || []).push(e);
+    });
+
+    // KPIs: last 7 complete days vs the 7 before
+    const complete = days.filter(d => !d.filling);
+    const cur = complete.slice(-7), prev = complete.slice(-14, -7);
+    const sum = (arr, k) => arr.reduce((a, d) => a + d[k], 0);
+    function kpi(label, k){
+      const c = sum(cur, k), p = sum(prev, k);
+      let cmp = 'no prior week';
+      if (prev.length === 7) {
+        if (p === 0) cmp = c > 0 ? '<span class="up">new</span> vs 0 the week before' : 'same as the week before (0)';
+        else { const pct = Math.round((c - p) / p * 100); cmp = `<span class="${pct >= 0 ? 'up' : 'down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span> vs ${p} the week before`; }
+      }
+      return `<div class="dp-kpi"><div class="lbl">${label}</div><div class="val">${c}</div><div class="cmp">${cmp}</div></div>`;
+    }
+    const kpis = `<div class="dp-kpis">${kpi('Customer actions', 'actions')}${kpi('Calls', 'calls')}${kpi('Website clicks', 'clicks')}${kpi('Directions', 'directions')}${kpi('Profile views', 'views')}</div>`;
+    const kpiNote = cur.length ? `<div class="sub" style="margin:-8px 0 20px;font-size:12.5px;color:var(--ink-soft);">Last 7 complete days: ${shortDay(cur[0].date)} – ${shortDay(cur[cur.length - 1].date)}. The 2 most recent days are left out because Google is still filling them in.</div>` : '';
+
+    // chart
+    const W = 900, H = 260, padL = 34, padR = 10, padT = 10, padB = 46;
+    const n = days.length, bw = (W - padL - padR) / n;
+    const maxA = Math.max(4, ...days.map(d => d.actions));
+    const y = v => padT + (H - padT - padB) * (1 - v / maxA);
+    const colors = { calls: '#E8542A', clicks: '#2B4C7E', directions: '#2F8F5B' };
+    let bars = '';
+    days.forEach((d, i) => {
+      let base = 0; const x = padL + i * bw + bw * 0.15, w = Math.max(1, bw * 0.7);
+      ['calls', 'clicks', 'directions'].forEach(k => {
+        if (!d[k]) return;
+        const y0 = y(base + d[k]), h = y(base) - y0;
+        bars += `<rect x="${x.toFixed(1)}" y="${y0.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${colors[k]}" opacity="${d.filling ? 0.35 : 1}"><title>${shortDay(d.date)}: ${d.calls} calls, ${d.clicks} clicks, ${d.directions} directions</title></rect>`;
+        base += d[k];
+      });
+    });
+    // 7-day rolling average line
+    let pts = [];
+    days.forEach((d, i) => {
+      const win = days.slice(Math.max(0, i - 6), i + 1).filter(x => !x.filling);
+      if (d.filling || win.length < 4) return;
+      const avg = win.reduce((a, x) => a + x.actions, 0) / win.length;
+      pts.push(`${(padL + i * bw + bw / 2).toFixed(1)},${y(avg).toFixed(1)}`);
+    });
+    const line = pts.length > 1 ? `<polyline points="${pts.join(' ')}" fill="none" stroke="#15171C" stroke-width="2"/>` : '';
+    // y grid
+    let grid = '';
+    const step = maxA <= 8 ? 2 : (maxA <= 20 ? 5 : 10);
+    for (let v = 0; v <= maxA; v += step) grid += `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(21,23,28,0.08)"/><text x="${padL - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="#5B5F6B">${v}</text>`;
+    // x labels + event markers
+    let xl = '', ev = '';
+    const every = Math.ceil(n / 10);
+    days.forEach((d, i) => {
+      const cx = padL + i * bw + bw / 2;
+      if (i % every === 0) xl += `<text x="${cx}" y="${H - 26}" text-anchor="middle" font-size="11" fill="#5B5F6B">${shortDay(d.date)}</text>`;
+      const evs = evByDate[d.date] || [];
+      const posts = evs.filter(e => e.type === 'gbp_post'), reviews = evs.filter(e => e.type === 'review_response');
+      if (posts.length) ev += `<path d="M${cx} ${H - 18}l6 10h-12z" fill="#E8542A"><title>${shortDay(d.date)}: ${posts.length} post${posts.length > 1 ? 's' : ''} — ${esc(posts.map(p => p.text).join(' | '))}</title></path>`;
+      if (reviews.length) ev += `<circle cx="${cx}" cy="${H - 4}" r="4" fill="#2F8F5B"><title>${shortDay(d.date)}: ${reviews.length} review repl${reviews.length > 1 ? 'ies' : 'y'}</title></circle>`;
+    });
+    const chart = `<div class="dp-card"><h3>Customer actions per day</h3><div class="sub">Stacked calls, website clicks and direction requests from Google. The black line is the 7-day average. Faded bars are days Google is still filling in. Hover anything for detail.</div>
+      <div class="dp-legend"><span style="--c:#E8542A">Calls</span><span style="--c:#2B4C7E">Website clicks</span><span style="--c:#2F8F5B">Directions</span><span style="--c:#15171C">7-day average</span><span style="--c:#E8542A">▲ Post went live</span><span style="--c:#2F8F5B">● Review reply posted</span></div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">${grid}${bars}${line}${xl}${ev}</svg></div>`;
+
+    // views chart
+    const VH = 140, maxV = Math.max(4, ...days.map(d => d.views));
+    const vy = v => 8 + (VH - 30) * (1 - v / maxV);
+    let vb = '';
+    days.forEach((d, i) => {
+      const x = padL + i * bw + bw * 0.15, w = Math.max(1, bw * 0.7);
+      vb += `<rect x="${x.toFixed(1)}" y="${vy(d.views).toFixed(1)}" width="${w.toFixed(1)}" height="${(vy(0) - vy(d.views)).toFixed(1)}" fill="#8B8F9C" opacity="${d.filling ? 0.35 : 0.8}"><title>${shortDay(d.date)}: ${d.views} profile views</title></rect>`;
+    });
+    const vchart = `<div class="dp-card"><h3>Profile views per day</h3><div class="sub">How often the profile showed up in Google Search and Maps. Views rising while actions stay flat usually means the profile is seen but not convincing: check photos, reviews and the latest posts.</div>
+      <svg viewBox="0 0 ${W} ${VH}" style="width:100%;height:auto;display:block;"><text x="${padL - 6}" y="${vy(maxV) + 4}" text-anchor="end" font-size="11" fill="#5B5F6B">${maxV}</text><text x="${padL - 6}" y="${vy(0) + 4}" text-anchor="end" font-size="11" fill="#5B5F6B">0</text>${vb}</svg></div>`;
+
+    // table
+    const rows = days.slice().reverse().map(d => {
+      const evs = (evByDate[d.date] || []).map(e => e.type === 'gbp_post'
+        ? `<span class="dp-ev post" title="${esc(e.text || '')}">Post: ${esc((e.text || '').slice(0, 48))}${(e.text || '').length > 48 ? '…' : ''}</span>`
+        : `<span class="dp-ev review">Review reply</span>`).join('');
+      return `<tr class="${d.filling ? 'filling' : ''}"><td>${wkDay(d.date)} ${shortDay(d.date)}${d.filling ? ' <span style="font-size:11px;">(filling in)</span>' : ''}</td><td class="n">${d.calls}</td><td class="n">${d.clicks}</td><td class="n">${d.directions}</td><td class="n"><strong>${d.actions}</strong></td><td class="n">${d.views}</td><td>${evs}</td></tr>`;
+    }).join('');
+    const table = `<div class="dp-card"><h3>Day by day</h3><div class="sub">Newest first.</div><div style="overflow-x:auto;"><table class="dp-table"><tr><th>Day</th><th style="text-align:right;">Calls</th><th style="text-align:right;">Clicks</th><th style="text-align:right;">Directions</th><th style="text-align:right;">Actions</th><th style="text-align:right;">Views</th><th>What we did</th></tr>${rows}</table></div></div>`;
+
+    box.innerHTML = kpis + kpiNote + chart + vchart + table;
   }
 
   // ---------- ROI REPORTS ----------
